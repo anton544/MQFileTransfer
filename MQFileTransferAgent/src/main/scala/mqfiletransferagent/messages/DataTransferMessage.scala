@@ -1,18 +1,14 @@
 package mqfiletransferagent.messages
 
 import scala.xml.XML
+import scala.xml.Elem
 
-class DataTransferMessage
-object DataTransferMessage {
-  def apply(message: String) = {
-    val xml = XML.loadString(message)
-	(xml \\ "type").text match {
-	  case "" => ()
-	}
-  }
+class DataTransferMessage(private val elem: Elem) {
+  lazy val command = (elem \ "type").text
 }
 
-case class CompletingTransferDataMessage extends DataTransferMessage
-case class CompletingTransferAckDataMessage extends DataTransferMessage
-case class DataTransferAckDataMessage extends DataTransferMessage
-case class DataTransferDataMessage extends DataTransferMessage
+object DataTransferMessage {
+  def apply(message: String) = {
+    new DataTransferMessage( XML.loadString(message) )
+  }
+}

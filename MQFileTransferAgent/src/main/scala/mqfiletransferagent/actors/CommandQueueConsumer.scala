@@ -12,10 +12,10 @@ class CommandQueueConsumer(commandQueue: String) extends Consumer with ActorLogg
 	def endpointUri = commandQueue
 	
 	def receive = LoggingReceive {
-	  case camelMessage: CamelMessage => CommandMessage(camelMessage.bodyAs[String]) match {
-	    case init: InitiateTransferCommandMessage => {}
-	    case start: StartingTransferCommandMessage => {}
-	    case startAck: StartingTransferAckCommandMessage => {}
+	  case camelMessage: CamelMessage => CommandMessage(camelMessage.bodyAs[String]).command match {
+	    case "InitiateTransfer" => {}
+	    case "StartingTransfer" => {}
+	    case "StartingTransferAck" => {}
 	  }
 	  case _ => log.warning("CommandQueueConsumer received unknown message type")
 	}

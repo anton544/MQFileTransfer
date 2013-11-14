@@ -12,4 +12,7 @@ dependencies {
   compile 'com.typesafe.akka:akka-actor_2.10:2.2.1'
   compile 'com.typesafe.akka:akka-camel_2.10:2.2.1'
   compile 'org.apache.activemq:activemq-camel:5.8.0'
+  testCompile 'com.typesafe.akka:akka-testkit_2.10:2.2.1'
+  testCompile 'org.scalatest:scalatest_2.10:2.0'
+  testCompile 'junit:junit:4.11'
 }
