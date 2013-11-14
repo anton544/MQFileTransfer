@@ -4,7 +4,13 @@ import scala.xml.XML
 import scala.xml.Elem
 
 class DataTransferMessage(private val elem: Elem) {
-  lazy val command = (elem \ "type").text
+  val command = (elem \ "type").text
+  val transferid = (elem \ "transferid").text
+  validate
+  
+  def validate{
+    if (command == "" || transferid == "") throw new DataTransferMessageParseException
+  }
 }
 
 object DataTransferMessage {
@@ -12,3 +18,5 @@ object DataTransferMessage {
     new DataTransferMessage( XML.loadString(message) )
   }
 }
+
+class DataTransferMessageParseException extends RuntimeException
