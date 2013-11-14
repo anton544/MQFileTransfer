@@ -9,9 +9,20 @@ import org.scalatest.Matchers
 
 @RunWith(classOf[JUnitRunner])
 class CommandMessageSpec extends WordSpec with Matchers {
+	val validMessage = "<message><type>InitiateTransfer</type><transferid>1234</transferid></message>"
+	
 	"The Command Message Object" must {
 		"return a InitiateTransferCommandMessage with type InitiateTransfer " in {
-			CommandMessage("<message><type>InitiateTransfer</type></message>").command shouldBe "InitiateTransfer"
+			CommandMessage(validMessage).command shouldBe "InitiateTransfer"
+			intercept[CommandMessageParseException] {
+				CommandMessage("<message><transferid>1234</transferid></message>")
+			}
+		}
+		"have a transfer id" in {
+			CommandMessage(validMessage).transferid shouldBe "1234"
+			intercept[CommandMessageParseException] {
+				CommandMessage("<message><type>InitiateTransfer</type></message>")
+			}
 		}
 	}
 }
