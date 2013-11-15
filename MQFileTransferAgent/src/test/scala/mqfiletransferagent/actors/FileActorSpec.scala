@@ -29,12 +29,12 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 	
 	"A ByteArrayWritingActor" must {
 		"acknowledge the data transfer" in {
-		    val actor = system.actorOf(Props[ByteArrayWritingActor])
+		    val actor = system.actorOf(Props[FileActor])
 		    actor ! FileData("", "/dev/null", "1234", 1)
 		    expectMsgClass(250 millis, classOf[DataTransferMessage])
 		}
 		"write data to file" in {
-			val actor = system.actorOf(Props[ByteArrayWritingActor])
+			val actor = system.actorOf(Props[FileActor])
 			val tempFile = File.createTempFile("deleteme", "test")
 			tempFile.deleteOnExit()
 			val data = FileData(Base64.encodeBase64String("Hello World".getBytes()), tempFile.getAbsolutePath(), "1234", 1)
