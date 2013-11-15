@@ -20,3 +20,6 @@ object DataTransferMessage {
 }
 
 class DataTransferMessageParseException extends RuntimeException
+
+
+case class FileData(data: String, filename: String, transferid: String, segmentNumber: Int)
