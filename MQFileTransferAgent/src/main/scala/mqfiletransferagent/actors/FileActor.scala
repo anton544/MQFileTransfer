@@ -10,7 +10,7 @@ import scala.xml.Elem
 import akka.event.LoggingReceive
 import akka.actor.ActorLogging
 
-class ByteArrayWritingActor extends Actor with ActorLogging {
+class FileActor extends Actor with ActorLogging {
 	def receive = LoggingReceive {
 		case fileData: FileData => {
 			val stream = new FileOutputStream(fileData.filename, true)

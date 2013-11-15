@@ -20,7 +20,7 @@ import java.io.File
 import akka.util.Timeout
 
 @RunWith(classOf[JUnitRunner])
-class ByteArrayWritingActorSpec extends TestKit(ActorSystem("ByteArrayWritingActorSpec")) 
+class FileActorSpec extends TestKit(ActorSystem("FileActorSpec")) 
 with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 	override def afterAll {
 		TestKit.shutdownActorSystem(system)
