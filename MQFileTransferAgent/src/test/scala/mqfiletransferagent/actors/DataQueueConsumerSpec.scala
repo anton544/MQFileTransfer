@@ -18,4 +18,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 	override def afterAll {
 		TestKit.shutdownActorSystem(system)
 	}
+	
+	//DataQueueConsumer is a camel consumer actor and is not being passed messages like regular actors for testing 
+
 }
