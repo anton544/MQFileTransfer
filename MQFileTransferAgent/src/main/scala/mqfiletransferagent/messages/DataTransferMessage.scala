@@ -6,6 +6,8 @@ import scala.xml.Elem
 class DataTransferMessage(private val elem: Elem) {
   val command = (elem \ "type").text
   val transferid = (elem \ "transferid").text
+  lazy val data = (elem \ "data").text
+  lazy val segmentNumber = (elem \ "segmentnumber").text.toInt
   validate
   
   def validate{

@@ -9,8 +9,15 @@ class CommandMessage (private val elem: Elem) {
   validate
   
   def validate {
-    if (command == "" || transferid == "") throw new CommandMessageParseException
+  	if (command == "" || transferid == "") throw new CommandMessageParseException
   }
+  
+  override def equals(o: Any) = o match {
+  	case that: CommandMessage => elem.equals(that.elem)
+  	case _ => false
+  }
+  
+  override def hashCode = elem.hashCode
 }
 
 object CommandMessage {

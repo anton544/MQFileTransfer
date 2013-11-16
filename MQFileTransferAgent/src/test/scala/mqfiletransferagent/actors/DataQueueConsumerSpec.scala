@@ -12,19 +12,10 @@ import scala.concurrent.duration._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
-
 @RunWith(classOf[JUnitRunner])
-class CommandQueueConsumerSpec extends TestKit(ActorSystem("CommandQueueConsumerSpec")) 
+class DataQueueConsumerSpec extends TestKit(ActorSystem("DataQueueConsumerSpec")) 
 with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 	override def afterAll {
 		TestKit.shutdownActorSystem(system)
-	}
-
-	"A CommandQueueConsumer receiving an unknown message" must {
-		"log it" in {
-			val consumer = system.actorOf(Props(new CommandQueueConsumer("")))
-			consumer ! "test"
-			expectNoMsg(250 millis)
-		}
 	}
 }

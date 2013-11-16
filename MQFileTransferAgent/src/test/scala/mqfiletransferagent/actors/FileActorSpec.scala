@@ -27,7 +27,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 	}
 	implicit val timeout = Timeout(250 millis)
 	
-	"A ByteArrayWritingActor" must {
+	"A FileActor receiving a FileData message" must {
 		"acknowledge the data transfer" in {
 		    val actor = system.actorOf(Props[FileActor])
 		    actor ! FileData("", "/dev/null", "1234", 1)
