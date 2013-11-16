@@ -20,7 +20,7 @@ class CommandQueueProducer extends Actor {
 			mailboxMap -= (removeProducer.transferid)
 		}
 		case commandMessage: CommandMessage => {
-			mailboxMap.get(commandMessage.transferid).map((mailbox: String) => producerTemplate.sendBody("activemq:queue:"+mailbox, commandMessage.toString()))
+			mailboxMap.get(commandMessage.transferid).map((mailbox: String) => producerTemplate.sendBody("activemq:queue:"+mailbox, commandMessage.toXmlString()))
 		}
 	}
 }
