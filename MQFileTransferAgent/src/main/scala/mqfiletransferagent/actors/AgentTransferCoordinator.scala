@@ -23,8 +23,8 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 		case command: CommandMessage => processCommand(command)
 		case data: DataTransferMessage => processData(data)
 		case writeSuccess: FileWriteSuccess => {
-			dataProducer ! AddProducer()
-			cmdProducer ! AddProducer()
+			dataProducer ! AddProducer("","")
+			cmdProducer ! AddProducer("","")
 			cmdProducer ! new CommandMessage(<message><type>StartTransferAck</type><transferid>{writeSuccess.transferid}</transferid><status>Success</status></message>)
 			pathMap += (writeSuccess.transferid -> writeSuccess.path)
 		}
