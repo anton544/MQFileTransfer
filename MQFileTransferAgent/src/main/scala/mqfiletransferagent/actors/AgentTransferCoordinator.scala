@@ -14,6 +14,9 @@ import mqfiletransferagent.messages.AddProducer
 import mqfiletransferagent.messages.FileVerify
 import mqfiletransferagent.messages.FileData
 import mqfiletransferagent.messages.FileWriteFailure
+import java.io.File
+import java.io.FileInputStream
+import org.apache.commons.codec.digest.DigestUtils
 
 class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fileActor: ActorRef) extends Actor with ActorLogging {
 	def this() = this(null, null, null)
@@ -23,8 +26,8 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 		case command: CommandMessage => processCommand(command)
 		case data: DataTransferMessage => processData(data)
 		case writeSuccess: FileWriteSuccess => {
-			dataProducer ! AddProducer("","")
-			cmdProducer ! AddProducer("","")
+			dataProducer ! AddProducer(writeSuccess.transferid, writeSuccess.path)
+			cmdProducer ! AddProducer(writeSuccess.transferid, writeSuccess.path)
 			cmdProducer ! new CommandMessage(<message><type>StartTransferAck</type><transferid>{writeSuccess.transferid}</transferid><status>Success</status></message>)
 			pathMap += (writeSuccess.transferid -> writeSuccess.path)
 		}
@@ -32,7 +35,8 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 			cmdProducer ! new CommandMessage(<message><type>StartTransferAck</type><transferid>{writeFailure.transferid}</transferid><status>Fail</status></message>)
 			cmdProducer ! RemoveProducer(writeFailure.transferid)
 		}
-		case _ => log.warning("Unknown message")
+		
+		case x:Any => log.warning("Unknown message[" + x.getClass + "]: " + x.toString)
 	}
 	
 	def processCommand(commandMessage: CommandMessage) {
@@ -44,7 +48,7 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 				AgentTransferCoordinator.pathMap -= commandMessage.transferid
 			}
 			case "StartTransfer" => {
-				fileActor ! FileWriteVerify()
+				fileActor ! FileWriteVerify(commandMessage.transferid, commandMessage.targetPath)
 			}
 		}
 	}
@@ -52,10 +56,10 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 	def processData(dataMessage: DataTransferMessage) {
 		dataMessage.command match {
 			case "DataTransfer" => {
-				pathMap.get(dataMessage.transferid).map(fileActor ! FileData(dataMessage.data, _, dataMessage.transferid, dataMessage.segmentNumber))
+				pathMap.get(dataMessage.transferid).map(fileActor ! FileData(dataMessage.data, _, dataMessage.transferid, dataMessage.segmentNumber, dataMessage.segmentsTotal))
 			}
 			case "DataTransferComplete" => {
-				fileActor ! FileVerify()
+				pathMap.get(dataMessage.transferid).map(fileActor ! FileVerify(dataMessage.transferid, _, dataMessage.md5hash))
 			}
 		}
 	}

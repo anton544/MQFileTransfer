@@ -174,6 +174,6 @@ object AgentTransferCoordinatorSpec {
 	val startTransferMessage = new CommandMessage(<message><type>StartTransfer</type><transferid>1234</transferid></message>)
 	val successfulStartTransferAck = new CommandMessage(<message><type>StartTransferAck</type><transferid>1234</transferid><status>Success</status></message>)
 	val failureStartTransferAck = new CommandMessage(<message><type>StartTransferAck</type><transferid>1234</transferid><status>Fail</status></message>)
-	val dataTransferMessage = new DataTransferMessage(<message><type>DataTransfer</type><transferid>1234</transferid><data>MUFyY2hJZDE=</data><segmentnumber>1</segmentnumber></message>)
+	val dataTransferMessage = new DataTransferMessage(<message><type>DataTransfer</type><transferid>1234</transferid><data>MUFyY2hJZDE=</data><segmentnumber>1</segmentnumber><segmentstotal>1</segmentstotal></message>)
 	val dataTransferComplete = new DataTransferMessage(<message><type>DataTransferComplete</type><transferid>1234</transferid></message>)
 }

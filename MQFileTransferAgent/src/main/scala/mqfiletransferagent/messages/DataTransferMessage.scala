@@ -8,6 +8,8 @@ class DataTransferMessage(val elem: Elem) {
   val transferid = (elem \ "transferid").text
   lazy val data = (elem \ "data").text
   lazy val segmentNumber = (elem \ "segmentnumber").text.toInt
+  lazy val md5hash = (elem \ "md5hash").text
+  lazy val segmentsTotal = (elem \ "segmentstotal").text.toInt
   validate
   
   def validate{
@@ -20,6 +22,8 @@ class DataTransferMessage(val elem: Elem) {
   }
   
   override def hashCode() = elem.hashCode
+  
+  override def toString() = "DataTransferMessage [" + elem.toString + "]"
 }
 
 object DataTransferMessage {
@@ -31,4 +35,4 @@ object DataTransferMessage {
 class DataTransferMessageParseException extends RuntimeException
 
 
-case class FileData(data: String, filename: String, transferid: String, segmentNumber: Int)
+case class FileData(data: String, filename: String, transferid: String, segmentNumber: Int, segmentsTotal: Int)

@@ -19,6 +19,17 @@ import org.apache.commons.codec.binary.Base64
 import java.io.File
 import akka.util.Timeout
 import akka.testkit.TestProbe
+import mqfiletransferagent.messages.CommandMessage
+import mqfiletransferagent.messages.TransferProgress
+import mqfiletransferagent.messages.CleanupFile
+import mqfiletransferagent.messages.FileWriteVerify
+import mqfiletransferagent.messages.FileWriteSuccess
+import mqfiletransferagent.messages.FileWriteFailure
+import mqfiletransferagent.messages.FileVerify
+import java.io.FileWriter
+import java.security.MessageDigest
+import java.io.FileInputStream
+import org.apache.commons.codec.digest.DigestUtils
 
 @RunWith(classOf[JUnitRunner])
 class FileActorSpec extends TestKit(ActorSystem("FileActorSpec")) 
@@ -38,7 +49,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val tempFile = File.createTempFile("deleteme", "test")
 			tempFile.deleteOnExit()
 		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
-			val data = FileData(Base64.encodeBase64String("Hello World".getBytes()), tempFile.getAbsolutePath(), "1234", 1)
+			val data = FileData(Base64.encodeBase64String("Hello World".getBytes()), tempFile.getAbsolutePath(), "1234", 1, 1)
 		    actor ! data
 		    //don't know what the xmls are not equaling
 //		    dataQueueProbe.expectMsg(250 millis, dataTransferAckMessage)
@@ -60,39 +71,90 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val transferCoordinatorProbe = TestProbe()
 			val coordinatorProducerProbe = TestProbe()
 		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
-			val data = FileData(Base64.encodeBase64String("Hello World".getBytes()), tempFile.getAbsolutePath(), "1234", 1)
+			val data = FileData(Base64.encodeBase64String("Hello World".getBytes()), tempFile.getAbsolutePath(), "1234", 1, 1)
 			actor ! data
 			dataQueueProbe.expectUpdate
 		}
 		"send a TransferProgess message to the CoordinatorQueueProducer" in {
-			assert(false)
+			val dataQueueProbe = TestProbe()
+			val transferCoordinatorProbe = TestProbe()
+			val coordinatorProducerProbe = TestProbe()
+			val tempFile = File.createTempFile("deleteme", "test")
+			tempFile.deleteOnExit()
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+			val data = FileData(Base64.encodeBase64String("Hello World".getBytes()), tempFile.getAbsolutePath(), "1234", 1, 1)
+		    actor ! data
+		    coordinatorProducerProbe.expectMsg(100 millis, transferProgressMessage)
 		}
 	}
 	"A FileActor receiving a CleanupFile message" must {
 		"delete the specified file" in {
-			assert(false)
+			val dataQueueProbe = TestProbe()
+			val transferCoordinatorProbe = TestProbe()
+			val coordinatorProducerProbe = TestProbe()
+			val tempFile = File.createTempFile("deleteme", "test")
+			tempFile.deleteOnExit()
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    actor ! CleanupFile(tempFile.getAbsolutePath())
+		    Thread.sleep(100)
+		    assert(!tempFile.exists())
 		}
 	}
 	
 	"A FileActor receiving a FileWriteVerify message" must {
 		"send a FileWriteSuccess message to the TransferCoordinator if the process can write to the specified file" in {
-			assert(false)
+			val dataQueueProbe = TestProbe()
+			val transferCoordinatorProbe = TestProbe()
+			val coordinatorProducerProbe = TestProbe()
+			val tempFile = File.createTempFile("deleteme", "test")
+			tempFile.delete()
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    actor ! FileWriteVerify("1234", tempFile.getAbsolutePath())
+		    transferCoordinatorProbe.expectMsg(100 millis, FileWriteSuccess("1234", tempFile.getAbsolutePath()))
 		}
 		"send a FileWriteFailure message to the TransferCoordinator if the process can not write to the specified file" in {
-			assert(false)
+			val dataQueueProbe = TestProbe()
+			val transferCoordinatorProbe = TestProbe()
+			val coordinatorProducerProbe = TestProbe()
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    actor ! FileWriteVerify("1234", "/deleteme")
+		    transferCoordinatorProbe.expectMsg(100 millis, FileWriteFailure("1234"))
 		}
 	}
 	
 	"A FileActor receiving a FileVerify message" must {
-		"send a DataTransferCompleteAck message with a success if the provided hash equals the MD5 hash of the file" in {
-			assert(false)
+		"send a DataTransferCompleteAck message with a success to the dataQueueProducer if the provided hash equals the MD5 hash of the file" in {
+			val dataQueueProbe = TestProbe()
+			val transferCoordinatorProbe = TestProbe()
+			val coordinatorProducerProbe = TestProbe()
+			val tempFile = File.createTempFile("deleteme", "test")
+			tempFile.deleteOnExit()
+			val fw = new FileWriter(tempFile)
+			fw.append("TEST STUFF")
+			fw.close()
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    actor ! FileVerify("1234", tempFile.getAbsolutePath(), "c9240433bd9761c8d8852f165adf3008")
+		    dataQueueProbe.expectMsg(250 millis, dataTransferCompleteAckWithSuccessMessage)
 		}
-		"send a DataTransferCompleteAck message with a failure if the provided hash does not equals the MD5 hash of the file" in {
-			assert(false)
+		"send a DataTransferCompleteAck message with a failure to the dataQueueProducer  if the provided hash does not equals the MD5 hash of the file" in {
+			val dataQueueProbe = TestProbe()
+			val transferCoordinatorProbe = TestProbe()
+			val coordinatorProducerProbe = TestProbe()
+			val tempFile = File.createTempFile("deleteme", "test")
+			tempFile.deleteOnExit()
+			val fw = new FileWriter(tempFile)
+			fw.append("TEST STUFF")
+			fw.close()
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    actor ! FileVerify("1234", tempFile.getAbsolutePath(), "c9240433bd9761c8d8852f165adf3009")
+		    dataQueueProbe.expectMsg(250 millis, dataTransferCompleteAckWithFailMessage)
 		}
 	}
 }
 
 object FileActorSpec {
 	val dataTransferAckMessage = new DataTransferMessage(<message><type>DataTransferAck</type><transferid>1234</transferid><segmentnumber>1</segmentnumber><status>Success</status></message>)
+	val transferProgressMessage = new TransferProgress("1234", 1, 1)
+	val dataTransferCompleteAckWithSuccessMessage = new DataTransferMessage(<message><type>DataTransferCompleteAck</type><transferid>1234</transferid><status>Success</status></message>)
+	val dataTransferCompleteAckWithFailMessage = new DataTransferMessage(<message><type>DataTransferCompleteAck</type><transferid>1234</transferid><status>Failure</status></message>)
 }
