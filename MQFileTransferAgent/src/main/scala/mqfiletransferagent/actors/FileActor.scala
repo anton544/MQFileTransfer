@@ -19,8 +19,15 @@ import mqfiletransferagent.messages.FileWriteFailure
 import mqfiletransferagent.messages.CleanupFile
 import mqfiletransferagent.messages.FileWriteSuccess
 import java.io.IOException
+import mqfiletransferagent.messages.TransferNextSegment
+import mqfiletransferagent.MqFileTransferAgent
+import java.io.InputStream
+import org.apache.commons.io.FileUtils
+import mqfiletransferagent.messages.FileReadVerify
+import mqfiletransferagent.messages.FileReadSuccess
+import mqfiletransferagent.messages.FileReadFailure
 
-class FileActor(dataProducer: ActorRef, transferCoordinator: ActorRef, coordinatorProducer: ActorRef) extends Actor with ActorLogging {
+class FileActor(dataProducer: ActorRef, transferCoordinator: ActorRef, coordinatorProducer: ActorRef, segmentMaxSize: Int = 1024 * 512) extends Actor with ActorLogging {
 	def this() = this(null, null, null)
 	def receive = LoggingReceive {
 		case fileData: FileData => {
@@ -32,32 +39,48 @@ class FileActor(dataProducer: ActorRef, transferCoordinator: ActorRef, coordinat
 		}
 		case fileVerify: FileVerify => {
 		    println("fileVerify")
-			val fis = new FileInputStream(new File(fileVerify.path))
-			val status = if (fileVerify.md5hash == DigestUtils.md5Hex(fis)) "Success" else "Failure"
+			val status = if (fileVerify.md5hash == hashFile(fileVerify.path)) "Success" else "Failure"
 			dataProducer ! new DataTransferMessage(<message><type>DataTransferCompleteAck</type><transferid>{fileVerify.transferid}</transferid><status>{status}</status></message>)
-			fis.close()
 		}
 		case fileWriteVerify: FileWriteVerify => {
 			val file = new File(fileWriteVerify.path)
+			var canWrite = false
 			if (file.exists()) {
 				if (file.canWrite())
-				    transferCoordinator ! FileWriteSuccess(fileWriteVerify.transferid, fileWriteVerify.path)
-				else
-				    transferCoordinator ! FileWriteFailure(fileWriteVerify.transferid)
+				    canWrite = true
 			} else {
 				try {
 				val created = file.createNewFile()
 				if (created)
-				    transferCoordinator ! FileWriteSuccess(fileWriteVerify.transferid, fileWriteVerify.path)
-				else 
-				    transferCoordinator ! FileWriteFailure(fileWriteVerify.transferid)
+				    canWrite = true
 				} catch {
 					case _: java.io.IOException => 
-						transferCoordinator ! FileWriteFailure(fileWriteVerify.transferid)
 				}
 				file.delete()
 			}
-		    
+		    if (canWrite)
+		    	transferCoordinator ! FileWriteSuccess(fileWriteVerify.transferid, fileWriteVerify.path)
+		    else
+		    	transferCoordinator ! FileWriteFailure(fileWriteVerify.transferid)
+		}
+		case readVerify: FileReadVerify => {
+			val file = new File(readVerify.path)
+			if (file.exists() && file.canRead())
+				transferCoordinator ! FileReadSuccess(readVerify.transferid, readVerify.targetPath, readVerify.targetCommandQueue, readVerify.targetDataQueue)
+			else
+				transferCoordinator ! FileReadFailure(readVerify.transferid)
+		}
+		case next: TransferNextSegment => {
+			val file = new File(next.path)
+			val startByte = segmentMaxSize * next.nextSegmentNumber
+			if (startByte >= file.length()) {
+				dataProducer ! new DataTransferMessage(<message><type>DataTransferComplete</type><transferid>{next.transferid}</transferid><md5hash>{hashFile(next.path)}</md5hash></message>)
+			} else {
+				val endByte = if (file.length() < startByte + segmentMaxSize) file.length() else startByte + segmentMaxSize
+				val data = getSegment(file, startByte, (endByte - startByte).toInt)
+				val segmentstotal = file.length() / segmentMaxSize + (if ( file.length % segmentMaxSize > 0) 1 else 0)
+				dataProducer ! new DataTransferMessage(<message><type>DataTransfer</type><transferid>{next.transferid}</transferid><segmentnumber>{next.nextSegmentNumber}</segmentnumber><segmentstotal>{segmentstotal}</segmentstotal><data>{data}</data></message>)
+			}
 		}
 		case cleanupFile: CleanupFile => {
 			new File(cleanupFile.path).delete()
@@ -65,5 +88,23 @@ class FileActor(dataProducer: ActorRef, transferCoordinator: ActorRef, coordinat
 		case _ => log.warning("Unknown message type received")
 	}
 	
+	def getSegment(file: File, startByte: Long, segmentSize: Int) = {
+		val is = FileUtils.openInputStream(file)
+		is.skip(startByte)
+		val segmentBytes = new Array[Byte](segmentSize)
+		var bytesRead = is.read(segmentBytes)
+		while (bytesRead != segmentSize) {
+			bytesRead += is.read(segmentBytes, bytesRead, segmentSize-bytesRead)
+		}
+		is.close()
+		Base64.encodeBase64String(segmentBytes)
+	}
+	
+	def hashFile(path: String) = {
+		val fis = new FileInputStream(new File(path))
+		val hash = DigestUtils.md5Hex(fis)
+		fis.close()
+		hash
+	}
 	implicit def toDataTransferAck(fileData: FileData): Elem = <message><type>DataTransferAck</type><transferid>{fileData.transferid}</transferid><segmentnumber>{fileData.segmentNumber}</segmentnumber><status>Success</status></message>
 }

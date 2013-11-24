@@ -17,6 +17,8 @@ object MqFileTransferAgent extends App {
 	      nextOption(map ++ Map('commandq -> commandQueueName), tail)
 	    case "--dataq" :: dataQueueName :: tail =>
 	      nextOption(map ++ Map('dataq -> dataQueueName), tail)
+	    case "--transferSize" :: transferSize :: tail =>
+	      nextOption(map ++ Map('transferSize -> transferSize.toInt), tail)
 	    case activeMqConnectionString :: Nil =>
 	      nextOption(map ++ Map('activeMqConnectionString -> activeMqConnectionString), list.tail)
 	    case option :: tail =>

@@ -17,9 +17,13 @@ import mqfiletransferagent.messages.FileWriteFailure
 import java.io.File
 import java.io.FileInputStream
 import org.apache.commons.codec.digest.DigestUtils
+import mqfiletransferagent.messages.TransferNextSegment
+import mqfiletransferagent.messages.FileReadFailure
+import mqfiletransferagent.messages.FileReadVerify
+import mqfiletransferagent.messages.FileReadSuccess
 
-class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fileActor: ActorRef) extends Actor with ActorLogging {
-	def this() = this(null, null, null)
+class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fileActor: ActorRef, coordinatorProducer: ActorRef) extends Actor with ActorLogging {
+	def this() = this(null, null, null, null)
 
 	import AgentTransferCoordinator._
 	def receive = {
@@ -31,9 +35,17 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 			cmdProducer ! new CommandMessage(<message><type>StartTransferAck</type><transferid>{writeSuccess.transferid}</transferid><status>Success</status></message>)
 			pathMap += (writeSuccess.transferid -> writeSuccess.path)
 		}
+		case readSuccess: FileReadSuccess => {
+			cmdProducer ! AddProducer(readSuccess.transferid, readSuccess.targetCommandQueue)
+			dataProducer ! AddProducer(readSuccess.transferid, readSuccess.targetDataQueue)
+			cmdProducer ! new CommandMessage(<message><type>StartTransfer</type><transferid>{readSuccess.transferid}</transferid><targetpath>{readSuccess.targetPath}</targetpath><targetcommandqueue>{readSuccess.targetCommandQueue}</targetcommandqueue><targetdataqueue>{readSuccess.targetDataQueue}</targetdataqueue></message>)
+		}
 		case writeFailure: FileWriteFailure => {
 			cmdProducer ! new CommandMessage(<message><type>StartTransferAck</type><transferid>{writeFailure.transferid}</transferid><status>Fail</status></message>)
 			cmdProducer ! RemoveProducer(writeFailure.transferid)
+		}
+		case readFailure: FileReadFailure => {
+			coordinatorProducer ! new CommandMessage(<message><type>TransferFailure</type><transferid>1234</transferid></message>)
 		}
 		
 		case x:Any => log.warning("Unknown message[" + x.getClass + "]: " + x.toString)
@@ -45,10 +57,13 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 				dataProducer ! RemoveProducer(commandMessage.transferid)
 				cmdProducer ! RemoveProducer(commandMessage.transferid)
 				pathMap.get(commandMessage.transferid).map(fileActor ! CleanupFile(_))
-				AgentTransferCoordinator.pathMap -= commandMessage.transferid
+				pathMap -= commandMessage.transferid
 			}
 			case "StartTransfer" => {
 				fileActor ! FileWriteVerify(commandMessage.transferid, commandMessage.targetPath)
+			}
+			case "InitiateTransfer" => {
+				fileActor ! FileReadVerify(commandMessage.transferid, commandMessage.sourcePath, commandMessage.targetPath, commandMessage.targetCommandQueue, commandMessage.targetDataQueue)
 			}
 		}
 	}
@@ -58,8 +73,19 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 			case "DataTransfer" => {
 				pathMap.get(dataMessage.transferid).map(fileActor ! FileData(dataMessage.data, _, dataMessage.transferid, dataMessage.segmentNumber, dataMessage.segmentsTotal))
 			}
+			case "DataTransferAck" => {
+				pathMap.get(dataMessage.transferid).map(fileActor ! TransferNextSegment(dataMessage.transferid, _, dataMessage.segmentNumber + 1))
+			}
 			case "DataTransferComplete" => {
 				pathMap.get(dataMessage.transferid).map(fileActor ! FileVerify(dataMessage.transferid, _, dataMessage.md5hash))
+			}
+			case "DataTransferCompleteAck" => {
+				cmdProducer ! RemoveProducer(dataMessage.transferid)
+				dataProducer ! RemoveProducer(dataMessage.transferid)
+				if (dataMessage.status == "Success")
+					coordinatorProducer ! new CommandMessage(<message><type>TransferSuccess</type><transferid>{dataMessage.transferid}</transferid></message>)
+				else
+					coordinatorProducer ! new CommandMessage(<message><type>TransferFailure</type><transferid>{dataMessage.transferid}</transferid></message>)
 			}
 		}
 	}

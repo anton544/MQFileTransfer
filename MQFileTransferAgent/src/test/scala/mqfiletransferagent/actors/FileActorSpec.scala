@@ -30,6 +30,11 @@ import java.io.FileWriter
 import java.security.MessageDigest
 import java.io.FileInputStream
 import org.apache.commons.codec.digest.DigestUtils
+import mqfiletransferagent.messages.FileReadVerify
+import mqfiletransferagent.messages.FileReadSuccess
+import mqfiletransferagent.messages.FileReadFailure
+import mqfiletransferagent.messages.TransferNextSegment
+import mqfiletransferagent.MqFileTransferAgent
 
 @RunWith(classOf[JUnitRunner])
 class FileActorSpec extends TestKit(ActorSystem("FileActorSpec")) 
@@ -150,6 +155,60 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 		    dataQueueProbe.expectMsg(250 millis, dataTransferCompleteAckWithFailMessage)
 		}
 	}
+	
+	"A FileActor receiving a FileReadVerify message" must {
+		"send a FileReadSuccess message to the TransferCoordinator if the file exists and is readable" in {
+			val dataQueueProbe = TestProbe()
+			val transferCoordinatorProbe = TestProbe()
+			val coordinatorProducerProbe = TestProbe()
+			val tempFile = File.createTempFile("deleteme", "test")
+			tempFile.deleteOnExit()
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    actor ! FileReadVerify("1234", tempFile.getAbsolutePath(), "/somefile", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE")
+		    transferCoordinatorProbe.expectMsg(100 millis, FileReadSuccess("1234", "/somefile", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE"))
+		}
+		
+		"send a FileReadFailure message to the TransferCoordinator if the file does not exists or is not readable" in {
+			val dataQueueProbe = TestProbe()
+			val transferCoordinatorProbe = TestProbe()
+			val coordinatorProducerProbe = TestProbe()
+			val tempFile = File.createTempFile("deleteme", "test")
+			tempFile.delete()
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    actor ! FileReadVerify("1234", tempFile.getAbsolutePath(), "/somefile", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE")
+			transferCoordinatorProbe.expectMsg(100 millis, FileReadFailure("1234"))
+		}
+	}
+	
+	"A FileActor receiving a TransferNextSegment message" must {
+		"send a DataTransfer message to the DataQueueProducer if there are more segments remaining" in {
+			val dataQueueProbe = TestProbe()
+			val transferCoordinatorProbe = TestProbe()
+			val coordinatorProducerProbe = TestProbe()
+			val tempFile = File.createTempFile("deleteme", "test")
+			tempFile.deleteOnExit()
+			val fw = new FileWriter(tempFile)
+			fw.append("TE")
+			fw.close()
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref, 1)))
+		    actor ! TransferNextSegment("1234", tempFile.getAbsolutePath(), 1)
+		    dataQueueProbe.expectMsgClass(250 millis, classOf[DataTransferMessage])
+		}
+		
+		"send a DataTransferComplete message to the DataQueueProducer if there are no segments remaining" in {
+			val dataQueueProbe = TestProbe()
+			val transferCoordinatorProbe = TestProbe()
+			val coordinatorProducerProbe = TestProbe()
+			val tempFile = File.createTempFile("deleteme", "test")
+			tempFile.deleteOnExit()
+			val fw = new FileWriter(tempFile)
+			fw.append("TE")
+			fw.close()
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    actor ! TransferNextSegment("1234", tempFile.getAbsolutePath(), 1)
+		    dataQueueProbe.expectMsg(250 millis, dataTransferComplete)
+		}
+	}
 }
 
 object FileActorSpec {
@@ -157,4 +216,5 @@ object FileActorSpec {
 	val transferProgressMessage = new TransferProgress("1234", 1, 1)
 	val dataTransferCompleteAckWithSuccessMessage = new DataTransferMessage(<message><type>DataTransferCompleteAck</type><transferid>1234</transferid><status>Success</status></message>)
 	val dataTransferCompleteAckWithFailMessage = new DataTransferMessage(<message><type>DataTransferCompleteAck</type><transferid>1234</transferid><status>Failure</status></message>)
+	val dataTransferComplete = new DataTransferMessage(<message><type>DataTransferComplete</type><transferid>1234</transferid><md5hash>83f56f37a245ccaf8c885814074777f6</md5hash></message>)
 }

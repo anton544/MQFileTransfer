@@ -10,6 +10,7 @@ class DataTransferMessage(val elem: Elem) {
   lazy val segmentNumber = (elem \ "segmentnumber").text.toInt
   lazy val md5hash = (elem \ "md5hash").text
   lazy val segmentsTotal = (elem \ "segmentstotal").text.toInt
+  lazy val status = (elem \ "status").text
   validate
   
   def validate{

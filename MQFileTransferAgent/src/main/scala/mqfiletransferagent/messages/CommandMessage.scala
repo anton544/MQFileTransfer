@@ -8,7 +8,11 @@ class CommandMessage (private val elem: Elem) {
   val transferid = (elem \ "transferid").text
   validate
   lazy val status = (elem \ "status").text
-  lazy val targetPath = (elem \ "targetPath").text
+  lazy val targetPath = (elem \ "targetpath").text
+  lazy val sourcePath = (elem \ "sourcepath").text
+  lazy val sourceQueue = (elem \ "sourcequeue").text
+  lazy val targetCommandQueue = (elem \ "targetcommandqueue").text
+  lazy val targetDataQueue = (elem \ "targetdataqueue").text
   
   def validate {
   	if (command == "" || transferid == "") throw new CommandMessageParseException
@@ -27,6 +31,7 @@ class CommandMessage (private val elem: Elem) {
 	      case _ => "<message><type>%s</type><transferid>%s</transferid></message>" format (command, transferid)
 	  }
   }
+  override def toString() = "CommandMessage[" + elem + "]"
 }
 
 object CommandMessage {
