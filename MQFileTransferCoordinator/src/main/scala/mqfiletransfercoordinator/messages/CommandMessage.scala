@@ -8,9 +8,21 @@ class CommandMessage (private val elem: Elem) {
   validate
   lazy val transferid = (elem \ "transferid").text
   lazy val status = (elem \ "status").text
+  lazy val server = (elem \ "server").text
+  lazy val commandQueueName = (elem \ "commandqueuename").text
+  lazy val sourceServer = (elem \ "sourceserver").text
+  lazy val sourcePath = (elem \ "sourcepath").text
+  lazy val targetServer = (elem \ "targetserver").text
+  lazy val targetPath = (elem \ "targetpath").text
+  lazy val segmentNumber = (elem \ "segmentnumber").text.toInt
+  lazy val segmentsTotal = (elem \ "segmentstotal").text.toInt
   
   def validate {
   	if (command == "") throw new CommandMessageParseException
+  }
+  
+  override def toString() = {
+	  "CommandMessage(" + elem.toString + ")"
   }
   
   override def equals(o: Any) = o match {

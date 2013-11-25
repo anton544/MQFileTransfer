@@ -192,7 +192,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val cmdProducerProbe = TestProbe()
 			val coordProducerProbe = TestProbe()
 			val actor = system.actorOf(Props(new AgentTransferCoordinator(dataProducerProbe.ref, cmdProducerProbe.ref, fileActorProbe.ref, coordProducerProbe.ref)))
-			actor ! new CommandMessage(<message><type>InitiateTransfer</type><transferid>1234</transferid><sourcepath>/somefile</sourcepath><targetpath>/somefile2</targetpath><targetcommandqueue>TARGET.COMMAND.QUEUE</targetcommandqueue><targetdataqueue>TARGET.DATA.QUEUE</targetdataqueue></message>)
+			actor ! initiateTransfer 
 			fileActorProbe.expectMsg(100 millis, FileReadVerify("1234", "/somefile", "/somefile2", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE"))
 		}
 	}
@@ -311,4 +311,14 @@ object AgentTransferCoordinatorSpec {
 	val dataTransferCompleteAckWithSuccess = new DataTransferMessage(<message><type>DataTransferCompleteAck</type><transferid>1234</transferid><status>Success</status></message>)
 	val transferFailure = new CommandMessage(<message><type>TransferFailure</type><transferid>1234</transferid></message>)
 	val transferSuccess = new CommandMessage(<message><type>TransferSuccess</type><transferid>1234</transferid></message>)
+	val initiateTransfer = new CommandMessage(
+		<message>
+			<type>InitiateTransfer</type>
+			<transferid>1234</transferid>
+			<sourcepath>/somefile</sourcepath>
+			<targetpath>/somefile2</targetpath>
+			<targetcommandqueue>TARGET.COMMAND.QUEUE</targetcommandqueue>
+			<targetdataqueue>TARGET.DATA.QUEUE</targetdataqueue>
+		</message>
+	)
 }
