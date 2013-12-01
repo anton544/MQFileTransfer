@@ -1,4 +1,7 @@
 apply plugin: 'scala'
+apply plugin: 'application'
+
+mainClassName = "mqfiletransferagent.MqFileTransferAgent"
 
 repositories {
   mavenCentral()

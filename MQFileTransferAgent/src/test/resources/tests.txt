@@ -1,0 +1,3 @@
+<message><type>StartTransfer</type><transferid>1234</transferid><targetpath>/somefile</targetpath><targetcommandqueue>RESP.CMD.QUEUE</targetcommandqueue><targetdataqueue>RESP.DATA.QUEUE</targetdataqueue></message>
+
+<message><type>CancelTransfer</type><transferid>1234</transferid></message>

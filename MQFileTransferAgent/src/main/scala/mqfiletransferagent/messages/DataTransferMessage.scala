@@ -14,7 +14,33 @@ class DataTransferMessage(val elem: Elem) {
   validate
   
   def validate{
-    if (command == "" || transferid == "") throw new DataTransferMessageParseException
+	  if (command == "" || transferid == "") throw new DataTransferMessageParseException
+  }
+  
+  def toXmlString() = {
+	  "<message><type>%s</type><transferid>%s</transferid>" format (command, transferid) +
+	  dataPart() +
+	  segmentNumberPart() +
+	  md5HashPart() +
+	  segmentsTotalPart() +
+	  statusPart() +
+	  "</message>"
+  }
+  
+  def dataPart() = {
+  	  if (command == "DataTransfer") "<data>%s</data>" format data else ""
+  }
+  def segmentNumberPart() = {
+	  if (command == "DataTransfer") "<segmentnumber>%d</segmentnumber>" format segmentNumber else ""
+  }
+  def md5HashPart() = {
+	  if (command == "DataTransferComplete") "<md5hash>%s</md5hash>" format md5hash else ""
+  }
+  def segmentsTotalPart() = {
+	  if (command == "DataTransfer") "<segmentstotal>%d</segmentstotal>" format segmentsTotal else ""
+  }
+  def statusPart() = {
+	  if (command == "DataTransferAck" || command == "DataTransferCompleteAck") "<status>%s</status>" format status else ""
   }
   
   override def equals(o : Any) = o match {

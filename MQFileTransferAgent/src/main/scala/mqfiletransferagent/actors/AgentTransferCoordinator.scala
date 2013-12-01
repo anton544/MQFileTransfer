@@ -23,7 +23,6 @@ import mqfiletransferagent.messages.FileReadVerify
 import mqfiletransferagent.messages.FileReadSuccess
 
 class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fileActor: ActorRef, coordinatorProducer: ActorRef) extends Actor with ActorLogging {
-	def this() = this(null, null, null, null)
 
 	import AgentTransferCoordinator._
 	def receive = {

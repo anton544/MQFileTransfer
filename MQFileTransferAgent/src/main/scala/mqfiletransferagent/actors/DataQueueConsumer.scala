@@ -16,7 +16,7 @@ class DataQueueConsumer(dataQueue: String, agentCoordinator: ActorRef) extends C
 	def receive = LoggingReceive {
 	  case message: CamelMessage => agentCoordinator ! DataTransferMessage(message.bodyAs[String])
 	  case x: Any => {
-	  		log.warning("CommandQueueConsumer received unknown message type: " + x)
+	  		log.warning("CommandQueueConsumer received unknown message type: " + x.getClass)
 	  	}
 	}
 }

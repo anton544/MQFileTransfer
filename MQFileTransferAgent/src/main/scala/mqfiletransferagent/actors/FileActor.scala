@@ -27,8 +27,8 @@ import mqfiletransferagent.messages.FileReadVerify
 import mqfiletransferagent.messages.FileReadSuccess
 import mqfiletransferagent.messages.FileReadFailure
 
-class FileActor(dataProducer: ActorRef, transferCoordinator: ActorRef, coordinatorProducer: ActorRef, segmentMaxSize: Int = 1024 * 512) extends Actor with ActorLogging {
-	def this() = this(null, null, null)
+class FileActor(dataProducer: ActorRef, agentTransferCoordinator: Option[ActorRef], coordinatorProducer: ActorRef, segmentMaxSize: Int = 1024 * 512) extends Actor with ActorLogging {
+	val transferCoordinator:ActorRef = agentTransferCoordinator.getOrElse(context.actorFor("/user/agentTransferCoordinator"))
 	def receive = LoggingReceive {
 		case fileData: FileData => {
 			val stream = new FileOutputStream(fileData.filename, true)

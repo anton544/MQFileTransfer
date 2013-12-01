@@ -53,7 +53,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val coordinatorProducerProbe = TestProbe()
 			val tempFile = File.createTempFile("deleteme", "test")
 			tempFile.deleteOnExit()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 			val data = FileData(Base64.encodeBase64String("Hello World".getBytes()), tempFile.getAbsolutePath(), "1234", 1, 1)
 		    actor ! data
 		    //don't know what the xmls are not equaling
@@ -75,7 +75,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			}
 			val transferCoordinatorProbe = TestProbe()
 			val coordinatorProducerProbe = TestProbe()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 			val data = FileData(Base64.encodeBase64String("Hello World".getBytes()), tempFile.getAbsolutePath(), "1234", 1, 1)
 			actor ! data
 			dataQueueProbe.expectUpdate
@@ -86,7 +86,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val coordinatorProducerProbe = TestProbe()
 			val tempFile = File.createTempFile("deleteme", "test")
 			tempFile.deleteOnExit()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 			val data = FileData(Base64.encodeBase64String("Hello World".getBytes()), tempFile.getAbsolutePath(), "1234", 1, 1)
 		    actor ! data
 		    coordinatorProducerProbe.expectMsg(100 millis, transferProgressMessage)
@@ -99,7 +99,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val coordinatorProducerProbe = TestProbe()
 			val tempFile = File.createTempFile("deleteme", "test")
 			tempFile.deleteOnExit()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 		    actor ! CleanupFile(tempFile.getAbsolutePath())
 		    Thread.sleep(100)
 		    assert(!tempFile.exists())
@@ -113,7 +113,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val coordinatorProducerProbe = TestProbe()
 			val tempFile = File.createTempFile("deleteme", "test")
 			tempFile.delete()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 		    actor ! FileWriteVerify("1234", tempFile.getAbsolutePath())
 		    transferCoordinatorProbe.expectMsg(100 millis, FileWriteSuccess("1234", tempFile.getAbsolutePath()))
 		}
@@ -121,7 +121,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val dataQueueProbe = TestProbe()
 			val transferCoordinatorProbe = TestProbe()
 			val coordinatorProducerProbe = TestProbe()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 		    actor ! FileWriteVerify("1234", "/deleteme")
 		    transferCoordinatorProbe.expectMsg(100 millis, FileWriteFailure("1234"))
 		}
@@ -137,7 +137,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val fw = new FileWriter(tempFile)
 			fw.append("TEST STUFF")
 			fw.close()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 		    actor ! FileVerify("1234", tempFile.getAbsolutePath(), "c9240433bd9761c8d8852f165adf3008")
 		    dataQueueProbe.expectMsg(250 millis, dataTransferCompleteAckWithSuccessMessage)
 		}
@@ -150,7 +150,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val fw = new FileWriter(tempFile)
 			fw.append("TEST STUFF")
 			fw.close()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 		    actor ! FileVerify("1234", tempFile.getAbsolutePath(), "c9240433bd9761c8d8852f165adf3009")
 		    dataQueueProbe.expectMsg(250 millis, dataTransferCompleteAckWithFailMessage)
 		}
@@ -163,7 +163,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val coordinatorProducerProbe = TestProbe()
 			val tempFile = File.createTempFile("deleteme", "test")
 			tempFile.deleteOnExit()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 		    actor ! FileReadVerify("1234", tempFile.getAbsolutePath(), "/somefile", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE")
 		    transferCoordinatorProbe.expectMsg(100 millis, FileReadSuccess("1234", "/somefile", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE"))
 		}
@@ -174,7 +174,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val coordinatorProducerProbe = TestProbe()
 			val tempFile = File.createTempFile("deleteme", "test")
 			tempFile.delete()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 		    actor ! FileReadVerify("1234", tempFile.getAbsolutePath(), "/somefile", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE")
 			transferCoordinatorProbe.expectMsg(100 millis, FileReadFailure("1234"))
 		}
@@ -190,7 +190,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val fw = new FileWriter(tempFile)
 			fw.append("TE")
 			fw.close()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref, 1)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref, 1)))
 		    actor ! TransferNextSegment("1234", tempFile.getAbsolutePath(), 1)
 		    dataQueueProbe.expectMsgClass(250 millis, classOf[DataTransferMessage])
 		}
@@ -204,7 +204,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val fw = new FileWriter(tempFile)
 			fw.append("TE")
 			fw.close()
-		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, transferCoordinatorProbe.ref, coordinatorProducerProbe.ref)))
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 		    actor ! TransferNextSegment("1234", tempFile.getAbsolutePath(), 1)
 		    dataQueueProbe.expectMsg(250 millis, dataTransferComplete)
 		}
