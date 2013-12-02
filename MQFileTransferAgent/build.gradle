@@ -10,8 +10,9 @@ repositories {
 dependencies {
   compile 'org.scala-lang:scala-library:2.10.2'
   compile 'org.slf4j:slf4j-api:1.7.5'
-  compile 'org.slf4j:slf4j-simple:1.7.5'
+  compile 'org.slf4j:slf4j-log4j12:1.7.5'
   compile 'org.slf4j:jcl-over-slf4j:1.7.5'
+  compile 'log4j:log4j:1.2.17'
   compile 'com.typesafe.akka:akka-actor_2.10:2.2.1'
   compile 'com.typesafe.akka:akka-camel_2.10:2.2.1'
   compile 'com.typesafe.akka:akka-slf4j_2.10:2.2.1'

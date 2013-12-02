@@ -114,15 +114,15 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val tempFile = File.createTempFile("deleteme", "test")
 			tempFile.delete()
 		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
-		    actor ! FileWriteVerify("1234", tempFile.getAbsolutePath())
-		    transferCoordinatorProbe.expectMsg(100 millis, FileWriteSuccess("1234", tempFile.getAbsolutePath()))
+		    actor ! FileWriteVerify("1234", tempFile.getAbsolutePath(), "SOURCE.DATA.QUEUE")
+		    transferCoordinatorProbe.expectMsg(100 millis, FileWriteSuccess("1234", tempFile.getAbsolutePath(), "SOURCE.DATA.QUEUE"))
 		}
 		"send a FileWriteFailure message to the TransferCoordinator if the process can not write to the specified file" in {
 			val dataQueueProbe = TestProbe()
 			val transferCoordinatorProbe = TestProbe()
 			val coordinatorProducerProbe = TestProbe()
 		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
-		    actor ! FileWriteVerify("1234", "/deleteme")
+		    actor ! FileWriteVerify("1234", "/deleteme", "SOURCE.DATA.QUEUE")
 		    transferCoordinatorProbe.expectMsg(100 millis, FileWriteFailure("1234"))
 		}
 	}

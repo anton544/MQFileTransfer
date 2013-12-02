@@ -38,7 +38,7 @@ class FileActor(dataProducer: ActorRef, agentTransferCoordinator: Option[ActorRe
 			coordinatorProducer ! TransferProgress(fileData.transferid, fileData.segmentNumber, fileData.segmentsTotal)
 		}
 		case fileVerify: FileVerify => {
-		    println("fileVerify")
+		    log.debug(fileVerify.toString())
 			val status = if (fileVerify.md5hash == hashFile(fileVerify.path)) "Success" else "Failure"
 			dataProducer ! new DataTransferMessage(<message><type>DataTransferCompleteAck</type><transferid>{fileVerify.transferid}</transferid><status>{status}</status></message>)
 		}
@@ -59,7 +59,7 @@ class FileActor(dataProducer: ActorRef, agentTransferCoordinator: Option[ActorRe
 				file.delete()
 			}
 		    if (canWrite)
-		    	transferCoordinator ! FileWriteSuccess(fileWriteVerify.transferid, fileWriteVerify.path)
+		    	transferCoordinator ! FileWriteSuccess(fileWriteVerify.transferid, fileWriteVerify.path, fileWriteVerify.sourceDataQueue)
 		    else
 		    	transferCoordinator ! FileWriteFailure(fileWriteVerify.transferid)
 		}

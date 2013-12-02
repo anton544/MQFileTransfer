@@ -18,7 +18,7 @@ class DataTransferMessage(val elem: Elem) {
   }
   
   def toXmlString() = {
-	  "<message><type>%s</type><transferid>%s</transferid>" format (command, transferid) +
+	  ("<message><type>%s</type><transferid>%s</transferid>" format (command, transferid)) +
 	  dataPart() +
 	  segmentNumberPart() +
 	  md5HashPart() +
@@ -26,7 +26,7 @@ class DataTransferMessage(val elem: Elem) {
 	  statusPart() +
 	  "</message>"
   }
-  
+
   def dataPart() = {
   	  if (command == "DataTransfer") "<data>%s</data>" format data else ""
   }

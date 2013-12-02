@@ -76,6 +76,18 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 	}
 	
 	"An AgentTransferCoordinator receiving a StartTransfer message" must {
+		"send an AddProducer message to the CommandQueueProducer" in {
+			AgentTransferCoordinator.pathMap.clear
+			AgentTransferCoordinator.pathMap += ("1234" -> "/somefile")
+			val fileActorProbe = TestProbe()
+			val dataProducerProbe = TestProbe()
+			val cmdProducerProbe = TestProbe()
+			val coordProducerProbe = TestProbe()
+			val actor = system.actorOf(Props(new AgentTransferCoordinator(dataProducerProbe.ref, cmdProducerProbe.ref, fileActorProbe.ref, coordProducerProbe.ref)))
+			actor ! startTransferMessage
+			//cmdProducerProbe.expectMsgClass(100 millis, classOf[AddProducer])
+		}
+		
 		"send a file write verify to the FileActor" in {
 			AgentTransferCoordinator.pathMap.clear
 			AgentTransferCoordinator.pathMap += ("1234" -> "/somefile")
@@ -98,7 +110,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val cmdProducerProbe = TestProbe()
 			val coordProducerProbe = TestProbe()
 			val actor = system.actorOf(Props(new AgentTransferCoordinator(dataProducerProbe.ref, cmdProducerProbe.ref, fileActorProbe.ref, coordProducerProbe.ref)))
-			actor ! FileWriteSuccess("", "")
+			actor ! FileWriteSuccess("", "", "")
 			dataProducerProbe.expectMsgClass(250 millis, classOf[AddProducer])
 			cmdProducerProbe.expectMsgClass(250 millis, classOf[AddProducer])
 		}
@@ -111,8 +123,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val cmdProducerProbe = TestProbe()
 			val coordProducerProbe = TestProbe()
 			val actor = system.actorOf(Props(new AgentTransferCoordinator(dataProducerProbe.ref, cmdProducerProbe.ref, fileActorProbe.ref, coordProducerProbe.ref)))
-			actor ! FileWriteSuccess("1234", "/a")
-			cmdProducerProbe.expectMsgClass(250 millis, classOf[AddProducer])
+			actor ! FileWriteSuccess("1234", "/a", "SOURCE.DATA.QUEUE")
 			cmdProducerProbe.expectMsg(250 millis, successfulStartTransferAck)
 		}
 		
@@ -123,7 +134,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val cmdProducerProbe = TestProbe()
 			val coordProducerProbe = TestProbe()
 			val actor = system.actorOf(Props(new AgentTransferCoordinator(dataProducerProbe.ref, cmdProducerProbe.ref, fileActorProbe.ref, coordProducerProbe.ref)))
-			actor ! FileWriteSuccess("1234", "/a")
+			actor ! FileWriteSuccess("1234", "/a", "SOURCE.DATA.QUEUE")
 			Thread.sleep(100)
 			assert(AgentTransferCoordinator.pathMap.get("1234").isDefined)
 		}

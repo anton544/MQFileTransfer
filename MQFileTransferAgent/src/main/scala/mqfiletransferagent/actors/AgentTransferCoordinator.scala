@@ -21,16 +21,16 @@ import mqfiletransferagent.messages.TransferNextSegment
 import mqfiletransferagent.messages.FileReadFailure
 import mqfiletransferagent.messages.FileReadVerify
 import mqfiletransferagent.messages.FileReadSuccess
+import akka.event.LoggingReceive
 
 class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fileActor: ActorRef, coordinatorProducer: ActorRef) extends Actor with ActorLogging {
 
 	import AgentTransferCoordinator._
-	def receive = {
+	def receive = LoggingReceive {
 		case command: CommandMessage => processCommand(command)
 		case data: DataTransferMessage => processData(data)
 		case writeSuccess: FileWriteSuccess => {
-			dataProducer ! AddProducer(writeSuccess.transferid, writeSuccess.path)
-			cmdProducer ! AddProducer(writeSuccess.transferid, writeSuccess.path)
+			dataProducer ! AddProducer(writeSuccess.transferid, writeSuccess.sourceDataQueue)
 			cmdProducer ! new CommandMessage(<message><type>StartTransferAck</type><transferid>{writeSuccess.transferid}</transferid><status>Success</status></message>)
 			pathMap += (writeSuccess.transferid -> writeSuccess.path)
 		}
@@ -51,15 +51,20 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 	}
 	
 	def processCommand(commandMessage: CommandMessage) {
+		log.debug("processing Command: %s" format commandMessage.command)
 		commandMessage.command match {
 			case "CancelTransfer" => {
+				log.debug("Canceling transfer=: %s" format commandMessage.transferid)
 				dataProducer ! RemoveProducer(commandMessage.transferid)
 				cmdProducer ! RemoveProducer(commandMessage.transferid)
 				pathMap.get(commandMessage.transferid).map(fileActor ! CleanupFile(_))
 				pathMap -= commandMessage.transferid
+				log.debug("Pathmap after removal:" + pathMap)
 			}
 			case "StartTransfer" => {
-				fileActor ! FileWriteVerify(commandMessage.transferid, commandMessage.targetPath)
+				log.debug("Starting transfer with id: %s, file: %s" format(commandMessage.transferid, commandMessage.targetPath))
+				cmdProducer ! AddProducer(commandMessage.transferid, commandMessage.sourceCommandQueue)
+				fileActor ! FileWriteVerify(commandMessage.transferid, commandMessage.targetPath, commandMessage.sourceDataQueue)
 			}
 			case "InitiateTransfer" => {
 				fileActor ! FileReadVerify(commandMessage.transferid, commandMessage.sourcePath, commandMessage.targetPath, commandMessage.targetCommandQueue, commandMessage.targetDataQueue)

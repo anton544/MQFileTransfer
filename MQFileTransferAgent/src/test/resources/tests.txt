@@ -1,3 +1,40 @@
-<message><type>StartTransfer</type><transferid>1234</transferid><targetpath>/somefile</targetpath><targetcommandqueue>RESP.CMD.QUEUE</targetcommandqueue><targetdataqueue>RESP.DATA.QUEUE</targetdataqueue></message>
+Scenario1: Respond with fail
+<message><type>StartTransfer</type><transferid>1234</transferid><targetpath>/somefile</targetpath><sourcecommandqueue>RESP.CMD.QUEUE</sourcecommandqueue><sourcedataqueue>RESP.DATA.QUEUE</sourcedataqueue></message>
 
+Scenario2: Respond with success
+<message><type>StartTransfer</type><transferid>1234</transferid><targetpath>/tmp/deleteme.txt</targetpath><sourcecommandqueue>RESP.CMD.QUEUE</sourcecommandqueue><sourcedataqueue>RESP.DATA.QUEUE</sourcedataqueue></message>
 <message><type>CancelTransfer</type><transferid>1234</transferid></message>
+
+Scenario3: WriteToFile
+<message><type>StartTransfer</type><transferid>1234</transferid><targetpath>/tmp/deleteme.txt</targetpath><sourcecommandqueue>RESP.CMD.QUEUE</sourcecommandqueue><sourcedataqueue>RESP.DATA.QUEUE</sourcedataqueue></message>
+<message><type>DataTransfer</type><transferid>1234</transferid><data>MUFyY2hJZDE=</data><segmentnumber>1</segmentnumber><segmentstotal>1</segmentstotal></message>
+**********TODO:  need to remove producers after a successful transfer
+
+
+
+<message><type>StartTransferAck</type><transferid>1234</transferid><status>Success</status></message>
+
+<message><type>StartTransferAck</type><transferid>1234</transferid><status>Fail</status></message>
+
+<message><type>DataTransfer</type><transferid>1234</transferid><data>MUFyY2hJZDE=</data><segmentnumber>1</segmentnumber><segmentstotal>1</segmentstotal></message>
+  
+<message><type>DataTransferAck</type><transferid>1234</transferid><segmentnumber>1</segmentnumber></message>
+
+<message><type>DataTransferComplete</type><transferid>1234</transferid></message>
+
+<message><type>DataTransferCompleteAck</type><transferid>1234</transferid><status>Failure</status></message>
+
+<message><type>DataTransferCompleteAck</type><transferid>1234</transferid><status>Success</status></message>
+
+<message><type>TransferFailure</type><transferid>1234</transferid></message>
+
+<message><type>TransferSuccess</type><transferid>1234</transferid></message>
+
+<message>
+  <type>InitiateTransfer</type>
+  <transferid>1234</transferid>
+  <sourcepath>/somefile</sourcepath>
+  <targetpath>/somefile2</targetpath>
+  <targetcommandqueue>TARGET.COMMAND.QUEUE</targetcommandqueue>
+  <targetdataqueue>TARGET.DATA.QUEUE</targetdataqueue>
+</message>
