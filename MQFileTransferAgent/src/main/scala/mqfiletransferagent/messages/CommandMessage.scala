@@ -10,13 +10,14 @@ class CommandMessage (private val elem: Elem) {
   lazy val status = (elem \ "status").text
   lazy val targetPath = (elem \ "targetpath").text
   lazy val sourcePath = (elem \ "sourcepath").text
-  lazy val targetCommandQueue = (elem \ "sourcecommandqueue").text
-  lazy val targetDataQueue = (elem \ "sourcedataqueue").text
+  lazy val targetCommandQueue = (elem \ "targetcommandqueue").text
+  lazy val targetDataQueue = (elem \ "targetdataqueue").text
   lazy val sourceCommandQueue = (elem \ "sourcecommandqueue").text
   lazy val sourceDataQueue = (elem \ "sourcedataqueue").text
   
   def validate {
-  	if (command == "" || transferid == "") throw new CommandMessageParseException
+  	if (command == "") throw new CommandMessageParseException
+  	if (transferid == "") throw new CommandMessageParseException
   }
   
   override def equals(o: Any) = o match {

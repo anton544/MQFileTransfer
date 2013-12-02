@@ -8,7 +8,7 @@ Scenario2: Respond with success
 Scenario3: WriteToFile
 <message><type>StartTransfer</type><transferid>1234</transferid><targetpath>/tmp/deleteme.txt</targetpath><sourcecommandqueue>RESP.CMD.QUEUE</sourcecommandqueue><sourcedataqueue>RESP.DATA.QUEUE</sourcedataqueue></message>
 <message><type>DataTransfer</type><transferid>1234</transferid><data>MUFyY2hJZDE=</data><segmentnumber>1</segmentnumber><segmentstotal>1</segmentstotal></message>
-**********TODO:  need to remove producers after a successful transfer
+<message><type>DataTransferComplete</type><transferid>1234</transferid><md5hash>62d367a2b3fd7ea79e6cc4c233662033</md5hash></message>
 
 
 

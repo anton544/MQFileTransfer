@@ -26,6 +26,7 @@ import org.apache.commons.io.FileUtils
 import mqfiletransferagent.messages.FileReadVerify
 import mqfiletransferagent.messages.FileReadSuccess
 import mqfiletransferagent.messages.FileReadFailure
+import mqfiletransferagent.messages.RemoveProducer
 
 class FileActor(dataProducer: ActorRef, agentTransferCoordinator: Option[ActorRef], coordinatorProducer: ActorRef, segmentMaxSize: Int = 1024 * 512) extends Actor with ActorLogging {
 	val transferCoordinator:ActorRef = agentTransferCoordinator.getOrElse(context.actorFor("/user/agentTransferCoordinator"))
@@ -41,6 +42,7 @@ class FileActor(dataProducer: ActorRef, agentTransferCoordinator: Option[ActorRe
 		    log.debug(fileVerify.toString())
 			val status = if (fileVerify.md5hash == hashFile(fileVerify.path)) "Success" else "Failure"
 			dataProducer ! new DataTransferMessage(<message><type>DataTransferCompleteAck</type><transferid>{fileVerify.transferid}</transferid><status>{status}</status></message>)
+		    dataProducer ! RemoveProducer(fileVerify.transferid)
 		}
 		case fileWriteVerify: FileWriteVerify => {
 			val file = new File(fileWriteVerify.path)

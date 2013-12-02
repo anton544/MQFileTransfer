@@ -102,7 +102,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 	}
 	
 	"An AgentTransferCoordinator receiving a FileWriteSuccess message" must {
-		"send a add producer message to the DataProducerCoordinator and CmdProducerCoordinator" in {
+		"send a add producer message to the DataProducerCoordinator" in {
 			AgentTransferCoordinator.pathMap.clear
 			AgentTransferCoordinator.pathMap += ("1234" -> "/somefile")
 			val fileActorProbe = TestProbe()
@@ -110,9 +110,8 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val cmdProducerProbe = TestProbe()
 			val coordProducerProbe = TestProbe()
 			val actor = system.actorOf(Props(new AgentTransferCoordinator(dataProducerProbe.ref, cmdProducerProbe.ref, fileActorProbe.ref, coordProducerProbe.ref)))
-			actor ! FileWriteSuccess("", "", "")
+			actor ! FileWriteSuccess("1234", "/a", "SOURCE.DATA.QUEUE")
 			dataProducerProbe.expectMsgClass(250 millis, classOf[AddProducer])
-			cmdProducerProbe.expectMsgClass(250 millis, classOf[AddProducer])
 		}
 		
 		"send a StartTransferAck message with success to the CmdProducer" in {
@@ -164,6 +163,19 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			cmdProducerProbe.expectMsgClass(100 millis, failureStartTransferAck.getClass)
 			cmdProducerProbe.expectMsgClass(100 millis, classOf[RemoveProducer])
 		}
+		"remove entry from the pathMap" in {
+			AgentTransferCoordinator.pathMap.clear
+			AgentTransferCoordinator.pathMap += ("1234" -> "/somefile")
+			val fileActorProbe = TestProbe()
+			val dataProducerProbe = TestProbe()
+			val cmdProducerProbe = TestProbe()
+			val coordProducerProbe = TestProbe()
+			val actor = system.actorOf(Props(new AgentTransferCoordinator(dataProducerProbe.ref, cmdProducerProbe.ref, fileActorProbe.ref, coordProducerProbe.ref)))
+			actor ! FileWriteFailure("1234")
+			cmdProducerProbe.expectMsgClass(100 millis, failureStartTransferAck.getClass)
+			cmdProducerProbe.expectMsgClass(100 millis, classOf[RemoveProducer])
+			assert(!AgentTransferCoordinator.pathMap.get("1234").isDefined)
+		}
 	}
 	
 	"An AgentTransferCoordinator receiving a DataTransfer message" must {
@@ -191,6 +203,31 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val actor = system.actorOf(Props(new AgentTransferCoordinator(dataProducerProbe.ref, cmdProducerProbe.ref, fileActorProbe.ref, coordProducerProbe.ref)))
 			actor ! dataTransferComplete
 			fileActorProbe.expectMsgClass(100 millis, classOf[FileVerify])
+		}
+		
+		"remove pathMap entry" in {
+			AgentTransferCoordinator.pathMap.clear
+			AgentTransferCoordinator.pathMap += ("1234" -> "/somefile")
+			val fileActorProbe = TestProbe()
+			val dataProducerProbe = TestProbe()
+			val cmdProducerProbe = TestProbe()
+			val coordProducerProbe = TestProbe()
+			val actor = system.actorOf(Props(new AgentTransferCoordinator(dataProducerProbe.ref, cmdProducerProbe.ref, fileActorProbe.ref, coordProducerProbe.ref)))
+			actor ! dataTransferComplete
+			fileActorProbe.expectMsgClass(100 millis, classOf[FileVerify])
+			assert(!AgentTransferCoordinator.pathMap.get("1234").isDefined)
+		}
+		
+		"send a RemoveProducer message to the CommandProducer" in {
+			AgentTransferCoordinator.pathMap.clear
+			AgentTransferCoordinator.pathMap += ("1234" -> "/somefile")
+			val fileActorProbe = TestProbe()
+			val dataProducerProbe = TestProbe()
+			val cmdProducerProbe = TestProbe()
+			val coordProducerProbe = TestProbe()
+			val actor = system.actorOf(Props(new AgentTransferCoordinator(dataProducerProbe.ref, cmdProducerProbe.ref, fileActorProbe.ref, coordProducerProbe.ref)))
+			actor ! dataTransferComplete
+			cmdProducerProbe.expectMsgClass(100 millis, classOf[RemoveProducer])
 		}
 	}
 	

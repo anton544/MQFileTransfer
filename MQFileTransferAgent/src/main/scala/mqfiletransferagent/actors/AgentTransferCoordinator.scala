@@ -42,6 +42,7 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 		case writeFailure: FileWriteFailure => {
 			cmdProducer ! new CommandMessage(<message><type>StartTransferAck</type><transferid>{writeFailure.transferid}</transferid><status>Fail</status></message>)
 			cmdProducer ! RemoveProducer(writeFailure.transferid)
+			pathMap -= writeFailure.transferid
 		}
 		case readFailure: FileReadFailure => {
 			coordinatorProducer ! new CommandMessage(<message><type>TransferFailure</type><transferid>1234</transferid></message>)
@@ -82,6 +83,8 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 			}
 			case "DataTransferComplete" => {
 				pathMap.get(dataMessage.transferid).map(fileActor ! FileVerify(dataMessage.transferid, _, dataMessage.md5hash))
+				pathMap -= dataMessage.transferid
+				cmdProducer ! RemoveProducer(dataMessage.transferid)
 			}
 			case "DataTransferCompleteAck" => {
 				cmdProducer ! RemoveProducer(dataMessage.transferid)

@@ -35,6 +35,7 @@ import mqfiletransferagent.messages.FileReadSuccess
 import mqfiletransferagent.messages.FileReadFailure
 import mqfiletransferagent.messages.TransferNextSegment
 import mqfiletransferagent.MqFileTransferAgent
+import mqfiletransferagent.messages.RemoveProducer
 
 @RunWith(classOf[JUnitRunner])
 class FileActorSpec extends TestKit(ActorSystem("FileActorSpec")) 
@@ -153,6 +154,20 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
 		    actor ! FileVerify("1234", tempFile.getAbsolutePath(), "c9240433bd9761c8d8852f165adf3009")
 		    dataQueueProbe.expectMsg(250 millis, dataTransferCompleteAckWithFailMessage)
+		}
+		"send a RemoveProducer message to the dataQueueProducer after the Ack message" in {
+			val dataQueueProbe = TestProbe()
+			val transferCoordinatorProbe = TestProbe()
+			val coordinatorProducerProbe = TestProbe()
+			val tempFile = File.createTempFile("deleteme", "test")
+			tempFile.deleteOnExit()
+			val fw = new FileWriter(tempFile)
+			fw.append("TEST STUFF")
+			fw.close()
+		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
+		    actor ! FileVerify("1234", tempFile.getAbsolutePath(), "c9240433bd9761c8d8852f165adf3008")
+		    dataQueueProbe.expectMsg(250 millis, dataTransferCompleteAckWithSuccessMessage)
+		    dataQueueProbe.expectMsgClass(100 millis, classOf[RemoveProducer])
 		}
 	}
 	
