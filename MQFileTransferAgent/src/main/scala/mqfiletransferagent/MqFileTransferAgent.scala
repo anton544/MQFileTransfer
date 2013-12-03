@@ -46,7 +46,7 @@ object MqFileTransferAgent extends App {
 	val camelExtension = CamelExtension(system)
 	val camelContext = camelExtension.context
 	camelContext.addComponent("activemq", ActiveMQComponent.activeMQComponent(options.get('activeMqConnectionString).get.asInstanceOf[String]))
-	val coordinatorQueueProducer = system.actorOf(Props(new CoordinatorQueueProducer(options.getOrElse('coordinatorq, "COORDINATOR.COMMAND.QUEUE").asInstanceOf[String])), "coordinatorQueueProducer")
+	val coordinatorQueueProducer = system.actorOf(Props(new CoordinatorQueueProducer(options.getOrElse('coordinatorq, "activemq:queue:COORDINATOR.COMMAND.QUEUE").asInstanceOf[String])), "coordinatorQueueProducer")
 	val commandQueueProducer = system.actorOf(Props[CommandQueueProducer], "commandQueueProducer")
 	val dataQueueProducer = system.actorOf(Props[DataQueueProducer], "dataQueueProducer")
 	val fileActor = system.actorOf(Props(new FileActor(dataQueueProducer, None, coordinatorQueueProducer, options.getOrElse('transferSize, 1024 * 512).asInstanceOf[Int])), "fileActor")

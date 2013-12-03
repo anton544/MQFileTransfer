@@ -35,16 +35,20 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 			pathMap += (writeSuccess.transferid -> writeSuccess.path)
 		}
 		case readSuccess: FileReadSuccess => {
+			log.debug(readSuccess.toString)
+			pathMap += (readSuccess.transferid -> readSuccess.sourcePath)
 			cmdProducer ! AddProducer(readSuccess.transferid, readSuccess.targetCommandQueue)
 			dataProducer ! AddProducer(readSuccess.transferid, readSuccess.targetDataQueue)
-			cmdProducer ! new CommandMessage(<message><type>StartTransfer</type><transferid>{readSuccess.transferid}</transferid><targetpath>{readSuccess.targetPath}</targetpath><targetcommandqueue>{readSuccess.targetCommandQueue}</targetcommandqueue><targetdataqueue>{readSuccess.targetDataQueue}</targetdataqueue></message>)
+			cmdProducer ! new CommandMessage(<message><type>StartTransfer</type><transferid>{readSuccess.transferid}</transferid><targetpath>{readSuccess.targetPath}</targetpath><sourcecommandqueue>{readSuccess.sourceCommandQueue}</sourcecommandqueue><sourcedataqueue>{readSuccess.sourceDataQueue}</sourcedataqueue></message>)
 		}
 		case writeFailure: FileWriteFailure => {
+			log.debug(writeFailure.toString)
 			cmdProducer ! new CommandMessage(<message><type>StartTransferAck</type><transferid>{writeFailure.transferid}</transferid><status>Fail</status></message>)
 			cmdProducer ! RemoveProducer(writeFailure.transferid)
 			pathMap -= writeFailure.transferid
 		}
 		case readFailure: FileReadFailure => {
+			log.debug(readFailure.toString)
 			coordinatorProducer ! new CommandMessage(<message><type>TransferFailure</type><transferid>1234</transferid></message>)
 		}
 		
@@ -63,12 +67,27 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 				log.debug("Pathmap after removal:" + pathMap)
 			}
 			case "StartTransfer" => {
-				log.debug("Starting transfer with id: %s, file: %s" format(commandMessage.transferid, commandMessage.targetPath))
+				log.debug("Starting transfer with id: %s, file: %s" format (commandMessage.transferid, commandMessage.targetPath))
 				cmdProducer ! AddProducer(commandMessage.transferid, commandMessage.sourceCommandQueue)
 				fileActor ! FileWriteVerify(commandMessage.transferid, commandMessage.targetPath, commandMessage.sourceDataQueue)
 			}
+			case "StartTransferAck" => {
+				commandMessage.status match {
+				  	case "Success" => {
+				  		pathMap.get(commandMessage.transferid).map(fileActor ! TransferNextSegment(commandMessage.transferid, _, 1))
+					}
+				  	case "Failure" => {
+				  		dataProducer ! RemoveProducer(commandMessage.transferid)
+				  		cmdProducer ! RemoveProducer(commandMessage.transferid)
+				  		coordinatorProducer ! new CommandMessage(<message><type>TransferFailure</type><transferid>{commandMessage.transferid}</transferid></message>)
+				  		pathMap -= commandMessage.transferid
+				  	}
+				  	case other: String => log.warning("Unknown StartTransferAck status: %s" format other)
+				}
+			}
 			case "InitiateTransfer" => {
-				fileActor ! FileReadVerify(commandMessage.transferid, commandMessage.sourcePath, commandMessage.targetPath, commandMessage.targetCommandQueue, commandMessage.targetDataQueue)
+				log.debug("Initiating transfer with id %s, file: %s" format (commandMessage.transferid, commandMessage.sourcePath))
+				fileActor ! FileReadVerify(commandMessage.transferid, commandMessage.sourcePath, commandMessage.targetPath, commandMessage.sourceCommandQueue, commandMessage.sourceDataQueue, commandMessage.targetCommandQueue, commandMessage.targetDataQueue)
 			}
 		}
 	}

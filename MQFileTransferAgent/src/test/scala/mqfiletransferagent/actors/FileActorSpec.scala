@@ -179,8 +179,8 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val tempFile = File.createTempFile("deleteme", "test")
 			tempFile.deleteOnExit()
 		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
-		    actor ! FileReadVerify("1234", tempFile.getAbsolutePath(), "/somefile", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE")
-		    transferCoordinatorProbe.expectMsg(100 millis, FileReadSuccess("1234", "/somefile", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE"))
+		    actor ! FileReadVerify("1234", tempFile.getAbsolutePath(), "/somefile", "SOURCE.COMMAND.QUEUE", "SOURCE.DATA.QUEUE", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE")
+		    transferCoordinatorProbe.expectMsg(100 millis, FileReadSuccess("1234", tempFile.getAbsolutePath(), "/somefile", "SOURCE.COMMAND.QUEUE", "SOURCE.DATA.QUEUE", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE"))
 		}
 		
 		"send a FileReadFailure message to the TransferCoordinator if the file does not exists or is not readable" in {
@@ -190,7 +190,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			val tempFile = File.createTempFile("deleteme", "test")
 			tempFile.delete()
 		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
-		    actor ! FileReadVerify("1234", tempFile.getAbsolutePath(), "/somefile", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE")
+		    actor ! FileReadVerify("1234", tempFile.getAbsolutePath(), "/somefile", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE", "TARGET.COMMAND.QUEUE", "TARGET.DATA.QUEUE")
 			transferCoordinatorProbe.expectMsg(100 millis, FileReadFailure("1234"))
 		}
 	}
@@ -220,7 +220,7 @@ with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 			fw.append("TE")
 			fw.close()
 		    val actor = system.actorOf(Props(new FileActor(dataQueueProbe.ref, Some(transferCoordinatorProbe.ref), coordinatorProducerProbe.ref)))
-		    actor ! TransferNextSegment("1234", tempFile.getAbsolutePath(), 1)
+		    actor ! TransferNextSegment("1234", tempFile.getAbsolutePath(), 2)
 		    dataQueueProbe.expectMsg(250 millis, dataTransferComplete)
 		}
 	}

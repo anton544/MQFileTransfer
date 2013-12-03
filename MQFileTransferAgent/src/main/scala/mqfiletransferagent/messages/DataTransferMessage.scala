@@ -31,7 +31,7 @@ class DataTransferMessage(val elem: Elem) {
   	  if (command == "DataTransfer") "<data>%s</data>" format data else ""
   }
   def segmentNumberPart() = {
-	  if (command == "DataTransfer") "<segmentnumber>%d</segmentnumber>" format segmentNumber else ""
+	  if (command == "DataTransfer" || command == "DataTransferAck") "<segmentnumber>%d</segmentnumber>" format segmentNumber else ""
   }
   def md5HashPart() = {
 	  if (command == "DataTransferComplete") "<md5hash>%s</md5hash>" format md5hash else ""

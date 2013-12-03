@@ -5,6 +5,7 @@ import akka.actor.Actor
 import mqfiletransferagent.messages.TransferProgress
 import akka.camel.CamelExtension
 import akka.event.LoggingReceive
+import mqfiletransferagent.messages.CommandMessage
 
 class CoordinatorQueueProducer(coordinatorQueueName: String) extends Actor with ActorLogging {
 	val camel = CamelExtension(context.system)
@@ -12,7 +13,10 @@ class CoordinatorQueueProducer(coordinatorQueueName: String) extends Actor with 
 	
 	def receive = LoggingReceive {
 		case progess: TransferProgress => {
-			  producerTemplate.sendBody("activemq:queue:" + coordinatorQueueName, progess.toXmlString())
+			producerTemplate.sendBody(coordinatorQueueName, progess.toXmlString())
+		}
+		case commandMessage: CommandMessage => {
+			producerTemplate.sendBody(coordinatorQueueName, commandMessage.toXmlString())
 		}
 	}
 }

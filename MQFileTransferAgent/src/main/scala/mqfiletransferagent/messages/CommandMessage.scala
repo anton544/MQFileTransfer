@@ -28,10 +28,11 @@ class CommandMessage (private val elem: Elem) {
   override def hashCode = elem.hashCode
   
   def toXmlString() = {
-	  command match {
-	      case "StartTransferAck" => "<message><type>%s</type><transferid>%s</transferid><status>%s</status></message>" format (command, transferid, status)
-	      case _ => "<message><type>%s</type><transferid>%s</transferid></message>" format (command, transferid)
-	  }
+	  elem.toString
+//	  command match {
+//	      case "StartTransferAck" => "<message><type>%s</type><transferid>%s</transferid><status>%s</status></message>" format (command, transferid, status)
+//	      case _ => "<message><type>%s</type><transferid>%s</transferid></message>" format (command, transferid)
+//	  }
   }
   override def toString() = "CommandMessage[" + elem + "]"
 }

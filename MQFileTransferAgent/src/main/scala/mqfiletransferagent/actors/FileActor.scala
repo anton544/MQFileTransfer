@@ -35,7 +35,7 @@ class FileActor(dataProducer: ActorRef, agentTransferCoordinator: Option[ActorRe
 			val stream = new FileOutputStream(fileData.filename, true)
 			IOUtils.write(Base64.decodeBase64(fileData.data), stream)
 			stream.close()
-			dataProducer ! new DataTransferMessage(fileData)
+			dataProducer ! new DataTransferMessage(<message><type>DataTransferAck</type><transferid>{fileData.transferid}</transferid><segmentnumber>{fileData.segmentNumber}</segmentnumber><status>Success</status></message>)
 			coordinatorProducer ! TransferProgress(fileData.transferid, fileData.segmentNumber, fileData.segmentsTotal)
 		}
 		case fileVerify: FileVerify => {
@@ -45,6 +45,7 @@ class FileActor(dataProducer: ActorRef, agentTransferCoordinator: Option[ActorRe
 		    dataProducer ! RemoveProducer(fileVerify.transferid)
 		}
 		case fileWriteVerify: FileWriteVerify => {
+			log.debug(fileWriteVerify.toString())
 			val file = new File(fileWriteVerify.path)
 			var canWrite = false
 			if (file.exists()) {
@@ -66,15 +67,17 @@ class FileActor(dataProducer: ActorRef, agentTransferCoordinator: Option[ActorRe
 		    	transferCoordinator ! FileWriteFailure(fileWriteVerify.transferid)
 		}
 		case readVerify: FileReadVerify => {
-			val file = new File(readVerify.path)
+			log.debug(readVerify.toString())
+			val file = new File(readVerify.sourcePath)
 			if (file.exists() && file.canRead())
-				transferCoordinator ! FileReadSuccess(readVerify.transferid, readVerify.targetPath, readVerify.targetCommandQueue, readVerify.targetDataQueue)
+				transferCoordinator ! FileReadSuccess(readVerify.transferid, readVerify.sourcePath, readVerify.targetPath, readVerify.sourceCommandQueue, readVerify.sourceDataQueue, readVerify.targetCommandQueue, readVerify.targetDataQueue)
 			else
 				transferCoordinator ! FileReadFailure(readVerify.transferid)
 		}
 		case next: TransferNextSegment => {
+			log.debug(next.toString())
 			val file = new File(next.path)
-			val startByte = segmentMaxSize * next.nextSegmentNumber
+			val startByte = segmentMaxSize * (next.nextSegmentNumber - 1)
 			if (startByte >= file.length()) {
 				dataProducer ! new DataTransferMessage(<message><type>DataTransferComplete</type><transferid>{next.transferid}</transferid><md5hash>{hashFile(next.path)}</md5hash></message>)
 			} else {
@@ -85,6 +88,7 @@ class FileActor(dataProducer: ActorRef, agentTransferCoordinator: Option[ActorRe
 			}
 		}
 		case cleanupFile: CleanupFile => {
+			log.debug(cleanupFile.toString())
 			new File(cleanupFile.path).delete()
 		}
 		case _ => log.warning("Unknown message type received")
@@ -108,5 +112,4 @@ class FileActor(dataProducer: ActorRef, agentTransferCoordinator: Option[ActorRe
 		fis.close()
 		hash
 	}
-	implicit def toDataTransferAck(fileData: FileData): Elem = <message><type>DataTransferAck</type><transferid>{fileData.transferid}</transferid><segmentnumber>{fileData.segmentNumber}</segmentnumber><status>Success</status></message>
 }
