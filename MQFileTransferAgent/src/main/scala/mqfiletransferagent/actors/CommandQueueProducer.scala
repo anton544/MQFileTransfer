@@ -16,17 +16,17 @@ class CommandQueueProducer extends Actor with ActorLogging {
 	
 	def receive = LoggingReceive {
 		case addProducer: AddProducer => {
-			log.debug("Adding Producer for %s using queue %s" format (addProducer.transferid, addProducer.queuename))
+			log.debug(s"Adding Producer for ${addProducer.transferid} using queue ${addProducer.queuename}")
 			mailboxMap += (addProducer.transferid -> addProducer.queuename)
-			log.debug("mailboxMap after adding Producer: %s" format mailboxMap)
+			log.debug(s"mailboxMap after adding Producer: ${mailboxMap}")
 		}
 		case removeProducer: RemoveProducer => {
-			log.debug("Removing Producer for %s" format removeProducer.transferid)
+			log.debug(s"Removing Producer for ${removeProducer.transferid}")
 			mailboxMap -= (removeProducer.transferid)
-			log.debug("mailboxMap after removing Producer: %s" format mailboxMap)
+			log.debug(s"mailboxMap after removing Producer: ${mailboxMap}")
 		}
 		case commandMessage: CommandMessage => {
-			log.debug("Sending command message: %s" format commandMessage.toXmlString)
+			log.debug(s"Sending command message: ${commandMessage.toXmlString}")
 			mailboxMap.get(commandMessage.transferid).map((mailbox: String) => producerTemplate.sendBody("activemq:queue:"+mailbox, commandMessage.toXmlString()))
 		}
 	}

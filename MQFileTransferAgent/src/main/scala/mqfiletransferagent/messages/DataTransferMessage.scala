@@ -18,7 +18,7 @@ class DataTransferMessage(val elem: Elem) {
   }
   
   def toXmlString() = {
-	  ("<message><type>%s</type><transferid>%s</transferid>" format (command, transferid)) +
+	  (s"<message><type>${command}</type><transferid>${transferid}</transferid>") +
 	  dataPart() +
 	  segmentNumberPart() +
 	  md5HashPart() +
@@ -28,19 +28,19 @@ class DataTransferMessage(val elem: Elem) {
   }
 
   def dataPart() = {
-  	  if (command == "DataTransfer") "<data>%s</data>" format data else ""
+  	  if (command == "DataTransfer") s"<data>${data}</data>" else ""
   }
   def segmentNumberPart() = {
-	  if (command == "DataTransfer" || command == "DataTransferAck") "<segmentnumber>%d</segmentnumber>" format segmentNumber else ""
+	  if (command == "DataTransfer" || command == "DataTransferAck") s"<segmentnumber>${segmentNumber}</segmentnumber>" else ""
   }
   def md5HashPart() = {
-	  if (command == "DataTransferComplete") "<md5hash>%s</md5hash>" format md5hash else ""
+	  if (command == "DataTransferComplete") s"<md5hash>${md5hash}</md5hash>" else ""
   }
   def segmentsTotalPart() = {
-	  if (command == "DataTransfer") "<segmentstotal>%d</segmentstotal>" format segmentsTotal else ""
+	  if (command == "DataTransfer") s"<segmentstotal>${segmentsTotal}</segmentstotal>" else ""
   }
   def statusPart() = {
-	  if (command == "DataTransferAck" || command == "DataTransferCompleteAck") "<status>%s</status>" format status else ""
+	  if (command == "DataTransferAck" || command == "DataTransferCompleteAck") s"<status>${status}</status>" else ""
   }
   
   override def equals(o : Any) = o match {
@@ -50,7 +50,7 @@ class DataTransferMessage(val elem: Elem) {
   
   override def hashCode() = elem.hashCode
   
-  override def toString() = "DataTransferMessage [" + elem.toString + "]"
+  override def toString() = s"DataTransferMessage [${elem.toString}]"
 }
 
 object DataTransferMessage {

@@ -10,12 +10,16 @@ class CommandMessage (private val elem: Elem) {
   lazy val status = (elem \ "status").text
   lazy val server = (elem \ "server").text
   lazy val commandQueueName = (elem \ "commandqueuename").text
+  lazy val dataQueueName = (elem \ "dataqueuename").text
+  lazy val requestorQueueName = (elem \ "requestorqueuename").text
+  lazy val queryReplyQueueName = (elem \ "queryreplyqueuename").text
   lazy val sourceServer = (elem \ "sourceserver").text
   lazy val sourcePath = (elem \ "sourcepath").text
   lazy val targetServer = (elem \ "targetserver").text
   lazy val targetPath = (elem \ "targetpath").text
   lazy val segmentNumber = (elem \ "segmentnumber").text.toInt
   lazy val segmentsTotal = (elem \ "segmentstotal").text.toInt
+  lazy val correlationId = (elem \ "correlationid").text
   
   def validate {
   	if (command == "") throw new CommandMessageParseException
@@ -34,7 +38,7 @@ class CommandMessage (private val elem: Elem) {
   
   def toXmlString() = {
 	  command match {
-	      case _ => "<message><type>%s</type><transferid>%s</transferid></message>" format (command, transferid)
+	      case _ => s"<message><type>${command}</type><transferid>${transferid}</transferid></message>"
 	  }
   }
 }
