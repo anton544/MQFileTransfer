@@ -93,12 +93,12 @@ object MqFileTransferAgent extends App {
 	}
 	
 	private def getWebsphereMqComponent(options: Map[Symbol, Any]) = {
-		val connectionFactory = this.getClass().getClassLoader().loadClass("com.ibm.mq.jms.MQConnectionFactory").newInstance()
-		connectionFactory.getClass.getMethod("setTransportType", classOf[java.lang.Integer]).invoke(connectionFactory, 1.asInstanceOf[java.lang.Integer])
+		val connectionFactory = Class.forName("com.ibm.mq.jms.MQConnectionFactory").newInstance()
 		connectionFactory.getClass.getMethod("setHostName", classOf[java.lang.String]).invoke(connectionFactory, options.get('websphereMqHostName).get.toString)
-		connectionFactory.getClass.getMethod("setPort", classOf[java.lang.Integer]).invoke(connectionFactory, options.get('websphereMqPort).get.asInstanceOf[java.lang.Integer])
 		connectionFactory.getClass.getMethod("setQueueManager", classOf[java.lang.String]).invoke(connectionFactory, options.get('websphereMqQueueManager).get.toString)
 		connectionFactory.getClass.getMethod("setChannel", classOf[java.lang.String]).invoke(connectionFactory, options.get('websphereMqChannel).get.toString)
+		connectionFactory.getClass.getMethod("setTransportType", java.lang.Integer.TYPE).invoke(connectionFactory, 1.asInstanceOf[java.lang.Integer])
+		connectionFactory.getClass.getMethod("setPort", java.lang.Integer.TYPE).invoke(connectionFactory, options.get('websphereMqPort).get.asInstanceOf[java.lang.Integer])
 		val jmsComponent = new org.apache.camel.component.jms.JmsComponent
 		jmsComponent.setConnectionFactory(connectionFactory.asInstanceOf[javax.jms.ConnectionFactory])
 		jmsComponent
