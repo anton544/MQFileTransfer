@@ -22,6 +22,7 @@ import mqfiletransferagent.messages.FileReadFailure
 import mqfiletransferagent.messages.FileReadVerify
 import mqfiletransferagent.messages.FileReadSuccess
 import akka.event.LoggingReceive
+import mqfiletransferagent.MqFileTransferAgent
 
 class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fileActor: ActorRef, coordinatorProducer: ActorRef) extends Actor with ActorLogging {
 
@@ -56,10 +57,10 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 	}
 	
 	def processCommand(commandMessage: CommandMessage) {
-		log.debug("processing Command: %s" format commandMessage.command)
+		log.debug(s"processing Command: ${commandMessage.command}")
 		commandMessage.command match {
 			case "CancelTransfer" => {
-				log.debug("Canceling transfer=: %s" format commandMessage.transferid)
+				log.debug(s"Canceling transfer=: ${commandMessage.transferid}")
 				dataProducer ! RemoveProducer(commandMessage.transferid)
 				cmdProducer ! RemoveProducer(commandMessage.transferid)
 				pathMap.get(commandMessage.transferid).map(fileActor ! CleanupFile(_))
@@ -67,7 +68,7 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 				log.debug("Pathmap after removal:" + pathMap)
 			}
 			case "StartTransfer" => {
-				log.debug("Starting transfer with id: %s, file: %s" format (commandMessage.transferid, commandMessage.targetPath))
+				log.debug(s"Starting transfer with id: ${commandMessage.transferid}, file: ${commandMessage.targetPath}")
 				cmdProducer ! AddProducer(commandMessage.transferid, commandMessage.sourceCommandQueue)
 				fileActor ! FileWriteVerify(commandMessage.transferid, commandMessage.targetPath, commandMessage.sourceDataQueue)
 			}
@@ -82,12 +83,15 @@ class AgentTransferCoordinator(dataProducer: ActorRef, cmdProducer: ActorRef, fi
 				  		coordinatorProducer ! new CommandMessage(<message><type>TransferFailure</type><transferid>{commandMessage.transferid}</transferid></message>)
 				  		pathMap -= commandMessage.transferid
 				  	}
-				  	case other: String => log.warning("Unknown StartTransferAck status: %s" format other)
+				  	case other: String => log.warning(s"Unknown StartTransferAck status: ${other}")
 				}
 			}
 			case "InitiateTransfer" => {
-				log.debug("Initiating transfer with id %s, file: %s" format (commandMessage.transferid, commandMessage.sourcePath))
+				log.debug(s"Initiating transfer with id ${commandMessage.transferid}, file: ${commandMessage.sourcePath}")
 				fileActor ! FileReadVerify(commandMessage.transferid, commandMessage.sourcePath, commandMessage.targetPath, commandMessage.sourceCommandQueue, commandMessage.sourceDataQueue, commandMessage.targetCommandQueue, commandMessage.targetDataQueue)
+			}
+			case "Shutdown" => {
+				MqFileTransferAgent.shutdown
 			}
 		}
 	}

@@ -40,3 +40,9 @@ Scenario3: WriteToFile
   <targetcommandqueue>AGENT.COMMAND.QUEUE</targetcommandqueue>
   <targetdataqueue>AGENT.DATA.QUEUE</targetdataqueue>
 </message>
+
+<message><type>Shutdown</type></message>
+
+<message><type>AgentRemove</type><server>source.company.com</server></message>
+
+<message><type>InitiateTransfer</type><correlationid>7890</correlationid><requestorqueuename>test</requestorqueuename><sourceserver>source.company.com</sourceserver><sourcepath>/tmp/test.txt</sourcepath><targetserver>target.company.com</targetserver><targetpath>/tmp/transferred.txt</targetpath></message>

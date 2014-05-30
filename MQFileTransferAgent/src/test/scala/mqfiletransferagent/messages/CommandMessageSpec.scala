@@ -18,11 +18,5 @@ class CommandMessageSpec extends WordSpec with Matchers {
 				CommandMessage("<message><transferid>1234</transferid></message>")
 			}
 		}
-		"have a transfer id" in {
-			CommandMessage(validMessage).transferid shouldBe "1234"
-			intercept[CommandMessageParseException] {
-				CommandMessage("<message><type>InitiateTransfer</type></message>")
-			}
-		}
 	}
 }

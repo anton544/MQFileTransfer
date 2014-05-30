@@ -5,8 +5,8 @@ import scala.xml.XML
 
 class CommandMessage (private val elem: Elem) {
   val command = (elem \ "type").text
-  val transferid = (elem \ "transferid").text
   validate
+  lazy val transferid = (elem \ "transferid").text
   lazy val status = (elem \ "status").text
   lazy val targetPath = (elem \ "targetpath").text
   lazy val sourcePath = (elem \ "sourcepath").text
@@ -17,7 +17,6 @@ class CommandMessage (private val elem: Elem) {
   
   def validate {
   	if (command == "") throw new CommandMessageParseException
-  	if (transferid == "") throw new CommandMessageParseException
   }
   
   override def equals(o: Any) = o match {
@@ -29,10 +28,6 @@ class CommandMessage (private val elem: Elem) {
   
   def toXmlString() = {
 	  elem.toString
-//	  command match {
-//	      case "StartTransferAck" => "<message><type>%s</type><transferid>%s</transferid><status>%s</status></message>" format (command, transferid, status)
-//	      case _ => "<message><type>%s</type><transferid>%s</transferid></message>" format (command, transferid)
-//	  }
   }
   override def toString() = "CommandMessage[" + elem + "]"
 }
